@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>Malicious Software – Activity Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Minimalist, maroon, always light. */
+:root{
+  color-scheme:light;
+  --bg:#faf7f6; --surface:#ffffff; --surface-2:#f4edee; --border:#eadfe0; --border-2:#ddcdcf; --line:#e7dedf;
+  --text:#231a1c; --muted:#6f6065; --faint:#9a8d90;
+  --primary:#7a1f2e; --primary-dark:#5c1623; --primary-soft:#f6eaec; --primary-ink:#ffffff; --accent:#a84050;
+  --good:#1f6b4a; --good-soft:#eaf4ef; --bad:#a3231c; --bad-soft:#fbeeec; --warn:#7a5a12; --warn-soft:#f8f1df;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:light;
+  --bg:#faf7f6; --surface:#ffffff; --surface-2:#f4edee; --border:#eadfe0; --border-2:#ddcdcf; --line:#e7dedf;
+  --text:#231a1c; --muted:#6f6065; --faint:#9a8d90;
+  --primary:#7a1f2e; --primary-dark:#5c1623; --primary-soft:#f6eaec; --primary-ink:#ffffff; --accent:#a84050;
+  --good:#1f6b4a; --good-soft:#eaf4ef; --bad:#a3231c; --bad-soft:#fbeeec; --warn:#7a5a12; --warn-soft:#f8f1df;}}
+:root[data-theme="dark"]{color-scheme:light;
+  --bg:#faf7f6; --surface:#ffffff; --surface-2:#f4edee; --border:#eadfe0; --border-2:#ddcdcf; --line:#e7dedf;
+  --text:#231a1c; --muted:#6f6065; --faint:#9a8d90;
+  --primary:#7a1f2e; --primary-dark:#5c1623; --primary-soft:#f6eaec; --primary-ink:#ffffff; --accent:#a84050;
+  --good:#1f6b4a; --good-soft:#eaf4ef; --bad:#a3231c; --bad-soft:#fbeeec; --warn:#7a5a12; --warn-soft:#f8f1df;}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 72px);background:#faf7f6}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--text);
+  font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:16.5px;line-height:1.6;-webkit-font-smoothing:antialiased;letter-spacing:-.003em}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+img,svg{max-width:100%}
+h1,h2,h3,h4{margin:0 0 .5em;line-height:1.25;font-weight:700;letter-spacing:-.02em}
+h1{font-size:clamp(1.8rem,4.6vw,2.6rem)}
+h2{font-size:clamp(1.3rem,2.8vw,1.6rem)}
+h3{font-size:1.1rem}
+h4{font-size:.98rem;font-weight:600}
+p{margin:0 0 .75em}
+b,strong{font-weight:600}
+.mono,code{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+code{font-size:.85em;background:var(--surface-2);border:1px solid var(--border);padding:.03em .35em;border-radius:5px;word-break:break-word}
+button{font-family:inherit}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:6px}
+.wrap{max-width:760px;margin:0 auto;padding:22px 20px 72px}
+.small{font-size:.88rem}.muted{color:var(--muted)}
+.row{display:flex;align-items:center;gap:10px}.row.wrap{flex-wrap:wrap}.between{justify-content:space-between}.end{justify-content:flex-end}.center{justify-content:center}
+.stack>*+*{margin-top:16px}
+hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
+
+/* Top bar */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(250,247,246,.9);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.topbar-in{max-width:760px;margin:0 auto;padding:11px 20px;display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:9px;background:none;border:0;padding:0;cursor:pointer;color:var(--text);text-align:left}
+.brand:disabled{cursor:default}
+.brand-ic{width:26px;height:26px;border-radius:7px;background:var(--primary);color:var(--primary-ink);display:grid;place-items:center;font-size:14px;flex:none}
+.brand-t{font-weight:700;font-size:.98rem;line-height:1}
+.brand-t small{display:block;font-weight:400;font-size:.76rem;color:var(--muted);margin-top:2px}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.tb-steps{font-size:.82rem;color:var(--muted);font-weight:600}
+.tb-steps b{color:var(--primary)}
+.student{font-size:.84rem;line-height:1.15;text-align:right}
+.student small{display:block;color:var(--muted)}
+
+/* Blocks */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:clamp(18px,3.2vw,26px)}
+.bare{padding:4px 0}
+.eyebrow{font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.lead{font-size:1.06rem;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);color:var(--muted)}
+.pill.on{background:var(--primary-soft);border-color:var(--border-2);color:var(--primary)}
+.rail{height:3px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.rail>i{display:block;height:100%;background:var(--primary);transition:width .4s ease}
+.btn{appearance:none;border:1px solid var(--primary);border-radius:9px;padding:11px 18px;font-size:.96rem;font-weight:600;cursor:pointer;background:var(--primary);color:var(--primary-ink);display:inline-flex;align-items:center;justify-content:center;gap:7px;transition:background .18s,border-color .18s,color .18s}
+.btn:hover{background:var(--primary-dark);border-color:var(--primary-dark)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-ghost{background:transparent;color:var(--primary);border-color:var(--border-2)}
+.btn-ghost:hover{background:var(--primary-soft);border-color:var(--primary);color:var(--primary)}
+.btn-quiet{background:transparent;color:var(--muted);border-color:var(--border)}
+.btn-quiet:hover{background:var(--surface-2);color:var(--text)}
+.btn-sm{padding:7px 13px;font-size:.88rem;border-radius:8px}
+.field label{font-weight:600;font-size:.9rem;display:block;margin-bottom:6px}
+.input,textarea.ta{font:inherit;padding:11px 13px;border-radius:9px;border:1px solid var(--border-2);background:var(--surface);color:var(--text);outline:none;width:100%;transition:border .18s}
+.input:focus,textarea.ta:focus{border-color:var(--primary)}
+textarea.ta{min-height:92px;resize:vertical;line-height:1.5}
+.err{color:var(--bad);font-size:.88rem;font-weight:600;min-height:1.2em;margin-top:6px}
+
+/* Welcome / overview */
+.facts{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:7px}
+.facts li{display:flex;gap:9px;align-items:baseline;font-size:.96rem}
+.facts li::before{content:"—";color:var(--accent);font-weight:700}
+.axes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 2px}
+.axis{border:1px solid var(--border);border-radius:11px;padding:13px 15px;background:var(--surface-2)}
+.axis b{display:block;color:var(--primary);font-size:.95rem}
+.axis span{font-size:.88rem;color:var(--muted)}
+.who-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.obj{margin:0;padding:0;list-style:none;display:grid;gap:7px}
+.obj li{display:flex;gap:10px;font-size:.96rem}
+.obj li::before{content:counter(o);counter-increment:o;flex:none;width:22px;height:22px;border-radius:6px;background:var(--primary-soft);color:var(--primary);font-size:.78rem;font-weight:700;display:grid;place-items:center}
+.obj{counter-reset:o}
+.marks{width:100%;border-collapse:collapse;font-size:.92rem}
+.marks th,.marks td{padding:9px 2px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.marks tr:last-child td{border-bottom:0}
+.marks th{font-weight:600;color:var(--muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.04em}
+.path{display:grid;gap:10px}
+.pcard{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;border:1px solid var(--border);border-radius:12px;padding:14px 16px;background:var(--surface)}
+.pcard.locked{opacity:.55}
+.pnum{width:30px;height:30px;border-radius:8px;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;font-weight:700;font-size:.95rem}
+.pcard.quiz .pnum{background:var(--primary);color:var(--primary-ink)}
+.ptitle{font-weight:600;font-size:1rem}
+.pmeta{font-size:.82rem;color:var(--muted);margin-top:2px}
+
+/* Step */
+.crumbs{font-size:.82rem;color:var(--muted);margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.steptitle{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.key{border-left:2px solid var(--primary);padding:4px 0 4px 14px;margin-top:14px;color:var(--text)}
+.key b{color:var(--primary)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.box{border:1px solid var(--border);border-radius:11px;padding:13px 15px;background:var(--surface-2)}
+.box h4{color:var(--primary);margin-bottom:3px}
+.defn{display:grid;gap:8px;margin:10px 0}
+.defn .d{border:1px solid var(--border);border-radius:11px;padding:11px 14px;font-size:.93rem}
+.defn .d b{color:var(--primary)}
+.warnline{background:var(--warn-soft);border:1px solid #ecdcae;border-radius:9px;padding:8px 12px;font-size:.88rem;margin-bottom:12px}
+.actwrap{border:1px solid var(--border-2);border-radius:13px;padding:clamp(15px,3vw,22px);margin-top:4px;background:var(--surface)}
+.act-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.act-label{font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.badge{display:none;font-size:.8rem;font-weight:600;color:var(--good);align-items:center;gap:5px}
+.actwrap.done .badge{display:inline-flex}
+.task{font-weight:600;font-size:.98rem;margin-bottom:12px}
+.hintarea{margin-top:14px;padding-top:12px;border-top:1px dashed var(--border-2)}
+.hintbox{background:var(--surface-2);border:1px solid var(--border);padding:9px 13px;border-radius:9px;margin-top:9px;font-size:.92rem;animation:fade .2s}
+.fb{padding:11px 14px;border-radius:9px;margin-top:11px;font-size:.94rem;border:1px solid var(--border);background:var(--surface-2);animation:fade .2s}
+.fb.good{background:var(--good-soft);border-color:#cfe6da;color:#15543a}
+.fb.bad{background:var(--bad-soft);border-color:#eccbc8;color:#842019}
+.fb .act-next{margin-top:9px}
+.stepnav{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:18px}
+.dots{display:flex;gap:5px}
+.dots i{width:7px;height:7px;border-radius:99px;background:var(--border-2);transition:.3s}
+.dots i.ok{background:var(--accent)}
+.dots i.on{width:20px;background:var(--primary)}
+.part{margin:18px 0 8px;font-size:.98rem;font-weight:600;color:var(--primary)}
+.part:first-child{margin-top:0}
+
+/* Choice */
+.cq-top{display:flex;align-items:center;gap:10px;font-size:.82rem;color:var(--muted)}
+.cq-top .rail{flex:1}
+.cq-q{font-size:1.02rem;margin:12px 0}
+.opts{display:grid;gap:9px}
+.opt{font-size:.96rem;font-weight:500;padding:11px 14px;border-radius:9px;border:1px solid var(--border-2);background:var(--surface);color:var(--text);cursor:pointer;text-align:left;line-height:1.4;transition:border-color .15s,background .15s}
+.opt:hover:not(:disabled){border-color:var(--primary);background:var(--primary-soft)}
+.opt:disabled{cursor:default}
+.opt.right{border-color:var(--good);background:var(--good-soft);color:#15543a}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft);color:#842019}
+
+/* Flip */
+.flips{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:11px}
+.flip{perspective:900px;height:210px;cursor:pointer;border:0;background:none;padding:0;color:inherit;text-align:left}
+.flip-in{position:relative;width:100%;height:100%;transition:transform .55s;transform-style:preserve-3d}
+.flip.on .flip-in{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:12px;padding:15px;border:1px solid var(--border-2);display:flex;flex-direction:column;background:var(--surface)}
+.front{align-items:flex-start;justify-content:center;gap:4px}
+.flip:hover .front{border-color:var(--primary)}
+.front .fk{font-weight:700;font-size:1.12rem;color:var(--primary)}
+.front .fn{font-size:.86rem;color:var(--muted)}
+.front .tap{margin-top:auto;font-size:.76rem;color:var(--faint)}
+.back{background:var(--primary-soft);border-color:var(--border-2);transform:rotateY(180deg);font-size:.88rem;overflow:auto;gap:6px}
+.back .bt{font-weight:600;color:var(--primary)}
+
+/* Sort */
+.sub{font-weight:600;font-size:.9rem;margin-bottom:8px;display:flex;gap:8px;align-items:center}
+.pool{display:flex;flex-wrap:wrap;gap:7px;min-height:50px;padding:11px;border-radius:11px;background:var(--surface-2);border:1px dashed var(--border-2)}
+.chip{font-size:.9rem;font-weight:500;padding:7px 12px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--text);cursor:pointer;text-align:left;transition:.15s}
+.chip:hover{border-color:var(--primary)}
+.chip.sel{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+.buckets{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:12px}
+.bucket{text-align:left;cursor:pointer;border-radius:11px;border:1px solid var(--border-2);background:var(--surface);padding:11px 13px;min-height:108px;color:var(--text);display:flex;flex-direction:column;gap:5px;transition:.15s}
+.bucket:hover{border-color:var(--primary);background:var(--surface-2)}
+.bh{font-weight:600;font-size:.94rem;color:var(--primary)}
+.placedlist{display:flex;flex-wrap:wrap;gap:4px}
+.placed{font-size:.78rem;background:var(--good-soft);border:1px solid #cfe6da;border-radius:6px;padding:2px 7px;color:#15543a}
+
+/* Order / sequence */
+.order{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.events{display:grid;gap:7px}
+.timeline{list-style:none;padding:0;margin:0;display:grid;gap:7px}
+.tl-empty{border:1px dashed var(--border-2);border-radius:10px;padding:12px;color:var(--faint);font-size:.88rem;text-align:center}
+.tl-item{display:flex;gap:10px;align-items:flex-start;background:var(--good-soft);border:1px solid #cfe6da;border-radius:10px;padding:9px 11px;font-size:.9rem;animation:fade .25s}
+.tl-num{flex:none;width:22px;height:22px;border-radius:50%;background:var(--primary);color:var(--primary-ink);display:grid;place-items:center;font-size:.76rem;font-weight:700}
+.tl-ph{font-size:.78rem;font-weight:600;color:var(--primary)}
+.seq{display:grid;gap:8px;margin-top:4px}
+.msg{border:1px solid var(--border);border-radius:10px;padding:10px 13px;background:var(--surface);animation:fade .3s}
+.msg .d{font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:2px}
+.msg .p{font-size:.94rem}
+.msg.bad{background:var(--bad-soft);border-color:#eccbc8}
+.msg.ok{background:var(--good-soft);border-color:#cfe6da}
+.tasks{display:grid;gap:6px;margin-top:12px}
+.tk{display:flex;gap:9px;align-items:center;font-size:.92rem;font-weight:500;color:var(--muted)}
+.tick{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border-2);display:grid;place-items:center;font-size:.72rem;flex:none;color:transparent;transition:.2s}
+.tk.ok{color:var(--good)}.tk.ok .tick{background:var(--good);border-color:var(--good);color:#fff}
+
+/* Lesson done + reflect + share */
+.done-head{text-align:center;padding:6px 0 2px}
+.check{width:46px;height:46px;border-radius:50%;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;font-size:22px;margin:0 auto 10px}
+.take{margin:0;padding:0;list-style:none;display:grid;gap:7px}
+.take li{display:flex;gap:9px;font-size:.95rem}
+.take li::before{content:"✓";color:var(--good);font-weight:700}
+.reflect{border:1px solid var(--border-2);border-radius:12px;padding:16px;background:var(--surface-2)}
+.reflect .prompt{font-weight:600;margin-bottom:4px}
+.share-out{margin-top:10px}
+.sharebox{width:100%;min-height:150px;font-family:"JetBrains Mono",monospace;font-size:.82rem;border-radius:10px;border:1px solid var(--border-2);padding:11px;background:var(--surface);color:var(--text);margin-top:10px;white-space:pre;overflow:auto}
+
+/* Result */
+.ring{width:140px;height:140px;border-radius:50%;background:conic-gradient(var(--primary) calc(var(--p)*1%),var(--surface-2) 0);display:grid;place-items:center;margin:0 auto}
+.ring>div{width:112px;height:112px;border-radius:50%;background:var(--surface);display:grid;place-items:center;text-align:center;line-height:1}
+.ring b{font-size:2.3rem;font-weight:700;color:var(--primary)}
+.ring span{display:block;color:var(--muted);font-size:.9rem;margin-top:3px}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px}
+.kv div{border:1px solid var(--border);border-radius:9px;padding:8px 11px}
+.kv small{display:block;color:var(--muted);font-size:.8rem}
+.kv b{font-size:.98rem;font-weight:600;word-break:break-word}
+.status-pass{color:var(--good)}.status-fail{color:var(--bad)}
+.review{margin:0;padding:0;list-style:none;display:grid;gap:9px}
+.review li{border:1px solid var(--border);border-radius:10px;padding:11px 13px;font-size:.92rem}
+.review .yes{color:var(--good);font-weight:600}.review .no{color:var(--bad);font-weight:600}
+
+/* Quiz */
+.qprompt{font-size:1.1rem;margin:12px 0}
+.qopts{display:grid;gap:9px}
+.qopt{display:flex;gap:11px;align-items:center;text-align:left;font-size:.96rem;padding:11px 13px;border-radius:10px;border:1px solid var(--border-2);background:var(--surface);color:var(--text);cursor:pointer;transition:.15s}
+.qopt:hover:not(:disabled){border-color:var(--primary);background:var(--surface-2)}
+.qopt:disabled{cursor:default}
+.ltr{width:27px;height:27px;border-radius:7px;background:var(--surface-2);display:grid;place-items:center;font-weight:700;font-size:.85rem;flex:none;border:1px solid var(--border)}
+.qopt.sel{border-color:var(--primary);background:var(--primary-soft)}
+.qopt.sel .ltr{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+.qopt.right{border-color:var(--good);background:var(--good-soft)}
+.qopt.right .ltr{background:var(--good);color:#fff}
+.qopt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.qopt.wrong .ltr{background:var(--bad);color:#fff}
+
+.foot{text-align:center;color:var(--faint);font-size:.82rem;padding:0 20px 28px}
+.screen{animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.shake{animation:shake .35s}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:620px){
+  .two,.axes,.who-grid,.order,.kv{grid-template-columns:1fr}
+  .pcard{grid-template-columns:auto 1fr}
+  .pcard .btn{grid-column:1/-1}
+  .tb-steps{display:none}
+}
+</style>
+</head>
+<body>
+<header class="topbar" id="topbar"></header>
+<main id="app" class="wrap"></main>
+<footer class="foot">Everything here is simulated for learning. Progress is saved in this browser only — on a shared computer, choose “Different student”.</footer>
+
+<script>
+(function(){
+"use strict";
+const rootEl = document.documentElement;
+function forceLight(){ if(rootEl.getAttribute("data-theme") !== "light") rootEl.setAttribute("data-theme","light"); }
+forceLight();
+try{ new MutationObserver(forceLight).observe(rootEl,{attributes:true,attributeFilter:["data-theme"]}); }catch(e){}
+
+const KEY = "mw-activity-lab-v1";
+const TOTAL = 15;
+const app = document.getElementById("app");
+const topbar = document.getElementById("topbar");
+
+function fresh(){ return { name:"", roll:"", maxPos:-1, done:{}, reflect:{}, results:[] }; }
+let S = fresh();
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+function load(){ try{ const v = localStorage.getItem(KEY); if(v){ const o = JSON.parse(v); if(o && typeof o==="object"){ S = Object.assign(fresh(), o); S.reflect = S.reflect || {}; } } }catch(e){} }
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function shake(el){ el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake"); }
+function el(h){ const t=document.createElement("template"); t.innerHTML=h.trim(); return t.content.firstElementChild; }
+function doneCount(){ return Object.keys(S.done).filter(k=>S.done[k]).length; }
+let mode = "welcome";
+
+/* ---------- builders ---------- */
+function choiceQuiz(root, cfg){
+  const items = cfg.items; let i=0, first=0, missed=false;
+  const wrap = document.createElement("div"); root.appendChild(wrap);
+  function show(){
+    if(i >= items.length){ wrap.innerHTML = `<div class="fb good">All ${items.length} done — first-try correct: <b>${first} of ${items.length}</b>.</div>`; if(cfg.onDone) cfg.onDone(); return; }
+    const it = items[i]; missed=false;
+    let opts = (it.opts||cfg.options).slice(); if(cfg.shuffle) opts=shuffle(opts);
+    wrap.innerHTML = `<div class="cq-top"><span>${i+1} / ${items.length}</span><span class="rail"><i style="width:${i/items.length*100}%"></i></span></div>
+      <div class="cq-q">${it.q}</div><div class="opts">${opts.map((o,k)=>`<button class="opt" data-k="${k}">${o}</button>`).join("")}</div><div class="cqfb" aria-live="polite"></div>`;
+    const fb = wrap.querySelector(".cqfb");
+    wrap.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",()=>{
+      const o = opts[+b.dataset.k];
+      if(o === it.a){ if(!missed) first++; wrap.querySelectorAll(".opt").forEach(x=>x.disabled=true); b.classList.add("right");
+        fb.innerHTML = `<div class="fb good">${it.why}<div class="act-next"><button class="btn btn-sm">${i+1<items.length?"Next":"Finish"}</button></div></div>`;
+        fb.querySelector("button").addEventListener("click",()=>{ i++; show(); });
+      } else { missed=true; b.classList.add("wrong"); b.disabled=true; shake(b); fb.innerHTML = `<div class="fb bad">${it.hint||cfg.hint||"Try another option."}</div>`; }
+    }));
+  }
+  show();
+}
+function sortGame(root, cfg, onDone){
+  const items = shuffle(cfg.items); let sel=null, placed=0, first=0; const miss=new Set();
+  root.innerHTML = `<div class="sub">Items <span class="pill" data-left>${items.length} left</span></div><div class="pool" data-pool></div>
+    <div class="buckets">${cfg.buckets.map(b=>`<button class="bucket" data-f="${b.id}"><span class="bh">${b.label}</span><span class="small muted">${b.sub}</span><div class="placedlist"></div></button>`).join("")}</div><div data-fb aria-live="polite"></div>`;
+  const pool=root.querySelector("[data-pool]"), fb=root.querySelector("[data-fb]"), left=root.querySelector("[data-left]");
+  const nameOf=id=>cfg.buckets.find(b=>b.id===id).label;
+  items.forEach(it=>{ const c=el(`<button class="chip">${it.t}</button>`); c._it=it;
+    c.addEventListener("click",()=>{ pool.querySelectorAll(".chip").forEach(x=>x.classList.remove("sel")); c.classList.add("sel"); sel=c; fb.innerHTML=`<div class="fb">Selected <b>${it.t}</b> — now tap a box.</div>`; });
+    pool.appendChild(c); });
+  root.querySelectorAll(".bucket").forEach(b=>b.addEventListener("click",()=>{
+    if(!sel){ shake(b); fb.innerHTML=`<div class="fb">Tap an item first, then a box.</div>`; return; }
+    const it=sel._it;
+    if(it.f===b.dataset.f){ if(!miss.has(it.t)) first++; b.querySelector(".placedlist").appendChild(el(`<span class="placed">${it.t}</span>`)); sel.remove(); sel=null; placed++; left.textContent=(items.length-placed)+" left";
+      if(placed===items.length){ pool.innerHTML=`<span class="muted small">All sorted.</span>`; fb.innerHTML=`<div class="fb good">All ${items.length} sorted — first-try correct: <b>${first} of ${items.length}</b>.</div>`; onDone(); }
+      else fb.innerHTML=`<div class="fb good"><b>${it.t}</b> → ${nameOf(it.f)}.${it.why?" "+it.why:""}</div>`;
+    } else { miss.add(it.t); shake(b); fb.innerHTML=`<div class="fb bad">Not “${nameOf(b.dataset.f)}”. ${cfg.tips[it.f]}</div>`; }
+  }));
+}
+function orderGame(root, events, doneMsg, onDone){
+  let next=0; const order=shuffle(events.map((e,i)=>i));
+  root.innerHTML = `<div class="order"><div><div class="sub">Steps (shuffled)</div><div class="events" data-evs></div></div>
+    <div><div class="sub">Correct order</div><ol class="timeline" data-tl><li class="tl-empty">Click the step that happens first</li></ol></div></div><div data-fb aria-live="polite"></div>`;
+  const evs=root.querySelector("[data-evs]"), tl=root.querySelector("[data-tl]"), fb=root.querySelector("[data-fb]");
+  order.forEach(i=>{ const b=el(`<button class="opt">${events[i].t}</button>`);
+    b.addEventListener("click",()=>{ if(i===next){ b.remove(); if(next===0) tl.innerHTML="";
+        tl.appendChild(el(`<li class="tl-item"><span class="tl-num">${next+1}</span><div><div class="tl-ph">${events[i].phase}</div>${events[i].t}</div></li>`)); next++;
+        if(next===events.length){ fb.innerHTML=`<div class="fb good">${doneMsg}</div>`; onDone(); } else fb.innerHTML=`<div class="fb good">Correct — what comes next?</div>`;
+      } else { shake(b); fb.innerHTML=`<div class="fb bad">Not yet. ${events[next].clue}</div>`; } });
+    evs.appendChild(b); });
+}
+function flipGame(root, cards, doneMsg, onDone){
+  const seen=new Set();
+  root.innerHTML = `<div class="flips">${cards.map((f,i)=>`<button class="flip" data-i="${i}" aria-label="Flip ${f.name}"><div class="flip-in">
+    <div class="face front"><div class="fk">${f.k}</div><div class="fn">${f.name}</div><div class="tap">Tap to flip</div></div>
+    <div class="face back"><span class="bt">${f.name}</span>${f.back}</div></div></button>`).join("")}</div><div data-fb aria-live="polite"></div>`;
+  const fb=root.querySelector("[data-fb]");
+  root.querySelectorAll(".flip").forEach(b=>b.addEventListener("click",()=>{ b.classList.toggle("on"); seen.add(b.dataset.i);
+    if(seen.size===cards.length){ if(!root._d){ root._d=true; fb.innerHTML=`<div class="fb good">${doneMsg}</div>`; onDone(); } } else fb.innerHTML=`<div class="fb">${seen.size} of ${cards.length} flipped.</div>`; }));
+}
+function stepper(root, script, tasks, checkFn, onDone){
+  let step=0;
+  root.innerHTML = `<div class="seq" id="seq"></div><div class="row wrap" style="margin-top:12px"><button class="btn btn-sm" id="nx">Next step ▸</button><button class="btn btn-quiet btn-sm" id="rs">Restart</button></div>
+    ${tasks?`<div class="tasks">${tasks.map((t,k)=>`<div class="tk" id="tk${k}"><span class="tick">✓</span>${t}</div>`).join("")}</div>`:""}<div id="sfb"></div>`;
+  const seq=root.querySelector("#seq"), nx=root.querySelector("#nx");
+  function label(){ nx.disabled=step>=script.length; nx.textContent=step>=script.length?"Finished":"Next step ▸"; }
+  nx.addEventListener("click",()=>{ const s=script[step]; if(!s) return; seq.appendChild(el(`<div class="msg ${s.cls||""}"><div class="d">${s.d}</div><div class="p">${s.p}</div></div>`)); step++; label(); if(step>=script.length && checkFn) checkFn(root,onDone); });
+  root.querySelector("#rs").addEventListener("click",()=>{ step=0; seq.innerHTML=""; label(); });
+  label();
+}
+
+/* ---------- content ---------- */
+const VECTORS = [
+  {k:"Virus", name:"Infects a host", back:`<span>Attaches to a file or program. Spreads when the infected host runs — usually needs a <b>user action</b> to open it.</span><span class="small muted">Needs a host. Example idea: a macro in a downloaded document.</span>`},
+  {k:"Worm", name:"Self-replicates", back:`<span>A standalone program that copies itself across a <b>network</b> on its own, often by exploiting a vulnerability. No host, no clicking needed.</span><span class="small muted">Spreads fastest of all.</span>`},
+  {k:"Trojan", name:"Disguises itself", back:`<span>Looks like something useful (a game, a crack, an invoice). The <b>user is tricked</b> into running it. It doesn’t self-replicate.</span><span class="small muted">Pure social engineering.</span>`},
+  {k:"Drive-by", name:"Downloads silently", back:`<span>Just visiting a compromised web page quietly installs malware by exploiting the browser. The user does nothing but visit.</span><span class="small muted">A modern favourite.</span>`}
+];
+const PAYLOADS = [
+  {k:"Corrupt", name:"Damage data/system", back:`<span>Deletes, alters or scrambles files, or wrecks the system. Includes the classic destructive virus and the <b>logic bomb</b>.</span>`},
+  {k:"Steal", name:"Steal information", back:`<span>Keyloggers, spyware and phishing harvest passwords, card numbers and keystrokes and send them to the attacker.</span>`},
+  {k:"Zombie", name:"Steal service", back:`<span>Turns your machine into a <b>bot</b> under the attacker’s remote control — joined into a botnet for DDoS, spam or cryptomining.</span>`},
+  {k:"Stealth", name:"Hide and persist", back:`<span>Backdoors and rootkits keep the attacker in and hide the malware from the user and from antivirus.</span>`}
+];
+
+/* Lesson 1 activities */
+function a_axes(root, api){
+  const P="How it spreads (propagation)", W="What it does (payload)";
+  choiceQuiz(root,{ options:[P,W],
+    hint:"Spreading is about getting onto machines. Payload is the harm once it’s there.",
+    items:[
+      {q:"“It copies itself to every computer on the network automatically.”", a:P, why:"Self-copying across machines is a propagation mechanism."},
+      {q:"“It encrypts all your files and demands a ransom.”", a:W, why:"That’s the harm it causes — a payload."},
+      {q:"“It arrives hidden inside a cracked game the user installs.”", a:P, why:"Being disguised to get installed is how it spreads (a trojan vector)."},
+      {q:"“It logs every key you press and emails it to the attacker.”", a:W, why:"Stealing keystrokes is a payload action."},
+      {q:"“It exploits a flaw in the browser just from visiting a page.”", a:P, why:"A drive-by download is a propagation vector."},
+      {q:"“It quietly mines cryptocurrency using your CPU.”", a:W, why:"Using your machine for the attacker’s gain is a payload."}
+    ], onDone:api.complete });
+}
+function a_vectors(root, api){ flipGame(root, VECTORS, "You’ve met the four propagation vectors. The key split: a <b>virus needs a host and usually a click</b>; a <b>worm spreads itself</b>; a <b>trojan tricks you</b>; a <b>drive-by needs only a visit</b>.", api.complete); }
+function a_phases(root, api){
+  orderGame(root, [
+    {t:"<b>Dormant:</b> the virus sits idle, waiting.", phase:"1", clue:"it begins by doing nothing, just waiting."},
+    {t:"<b>Propagation:</b> it copies itself into other programs or files.", phase:"2", clue:"before it acts, it first spreads copies of itself."},
+    {t:"<b>Triggering:</b> a condition is met (a date, an event, a count).", phase:"3", clue:"something must set off the harmful part."},
+    {t:"<b>Execution:</b> the payload runs and does its damage.", phase:"4", clue:"finally the harmful action happens."}
+  ], "Correct: dormant → propagation → triggering → execution. Not every virus has a dormant phase, but the order of the rest holds.", api.complete);
+}
+function a_props(root, api){
+  const V="Virus", W="Worm", T="Trojan";
+  choiceQuiz(root,{ options:[V,W,T], shuffle:true,
+    hint:"Host needed + user runs it = virus. Self-spreading over a network = worm. Disguised, no self-copying = trojan.",
+    items:[
+      {q:"Needs a host program, and spreads when a user runs the infected file.", a:V, why:"That’s the defining behaviour of a virus."},
+      {q:"Standalone, copies itself across the network with no user action.", a:W, why:"Self-propagation with no host is a worm."},
+      {q:"Pretends to be useful software; the user installs it willingly; it does not replicate.", a:T, why:"Disguise plus no self-copying is a trojan."},
+      {q:"Can spread worldwide in minutes because it needs nobody to click.", a:W, why:"Only worms self-propagate that fast."},
+      {q:"Hides inside a spreadsheet macro and infects other documents you open.", a:V, why:"It attaches to a host and spreads on use — a virus."},
+      {q:"A free “PDF reader” that secretly opens a backdoor when run.", a:T, why:"Useful-looking bait with a hidden function is a trojan."}
+    ], onDone:api.complete });
+}
+function a_classify(root, api){
+  const V="Virus", W="Worm", T="Trojan", D="Drive-by download";
+  choiceQuiz(root,{ options:[V,W,T,D], shuffle:true,
+    hint:"Ask how it got onto the machine: attached to a file, spread itself, tricked the user, or installed from a web page.",
+    items:[
+      {q:"A mass-mailing program scans your contacts and emails copies of itself to all of them automatically.", a:W, why:"It replicates and spreads on its own — a worm."},
+      {q:"You download a “free Windows activator”. Running it installs a remote-control tool.", a:T, why:"Disguised bait the user runs — a trojan."},
+      {q:"An infected macro in a shared report document infects the next document you open.", a:V, why:"Attaches to host files and spreads on use — a virus."},
+      {q:"You visit a hacked news site and malware installs itself through a browser flaw, with no click.", a:D, why:"Install from merely visiting a page — a drive-by download."},
+      {q:"A program exploits a server vulnerability to jump from machine to machine across the internet by itself.", a:W, why:"Autonomous network spread — a worm."},
+      {q:"A pirated game that also quietly installs a keylogger when you play it.", a:T, why:"Useful-looking cover with a hidden payload — a trojan."}
+    ], onDone:api.complete });
+}
+
+/* Lesson 2 */
+function a_payCats(root, api){ flipGame(root, PAYLOADS, "Four things malware does: <b>corrupt</b>, <b>steal information</b>, <b>steal service</b> (zombie), and <b>hide</b> to persist. The same specimen can do more than one.", api.complete); }
+function a_paySort(root, api){
+  sortGame(root,{
+    buckets:[
+      {id:"c", label:"Corrupt / destroy", sub:"damage data or system"},
+      {id:"s", label:"Steal information", sub:"take secret data"},
+      {id:"z", label:"Steal service", sub:"use your machine"}
+    ],
+    tips:{ c:"This destroys or alters data or the system.", s:"This reads or exfiltrates secret data.", z:"This uses your machine’s power or connection for the attacker." },
+    items:[
+      {t:"Ransomware encrypts your files", f:"c"}, {t:"A logic bomb wipes records on a date", f:"c"}, {t:"Malware corrupts the boot sector", f:"c"},
+      {t:"Keylogger captures passwords", f:"s"}, {t:"Spyware reads your browsing", f:"s"}, {t:"Phishing page harvests card numbers", f:"s"},
+      {t:"Your PC joins a DDoS attack", f:"z"}, {t:"Hidden cryptominer uses your CPU", f:"z"}, {t:"Bot sends spam from your machine", f:"z"}
+    ]
+  }, api.complete);
+}
+function a_botnet(root, api){
+  stepper(root, [
+    {cls:"", d:"Step 1 — infection", p:"A worm or trojan compromises thousands of PCs. Each becomes a <b>bot</b> (zombie)."},
+    {cls:"", d:"Step 2 — command & control (C&C)", p:"Each bot quietly contacts the attacker’s C&C server for orders."},
+    {cls:"", d:"Step 3 — the botnet", p:"Together the bots form a <b>botnet</b> — one attacker, many remote-controlled machines."},
+    {cls:"bad", d:"Step 4 — the order", p:"The attacker commands: “all bots, flood target.com now.”"},
+    {cls:"bad", d:"Step 5 — DDoS", p:"Thousands of bots hit the target at once. It’s overwhelmed and goes offline."}
+  ], ["Step through all five stages of a botnet attack"],
+  (root,onDone)=>{ root.querySelector("#tk0").classList.add("ok");
+    const q=el(`<div><div class="part">Quick check</div><div id="bq"></div></div>`); root.appendChild(q);
+    choiceQuiz(root.querySelector("#bq"),{ shuffle:true, items:[
+      {q:"What is a “bot” or “zombie”?", opts:["A compromised machine under an attacker’s remote control","A type of firewall","A strong password"], a:"A compromised machine under an attacker’s remote control", why:"Bots are infected machines the attacker controls remotely."},
+      {q:"What does the C&C server do?", opts:["Sends commands to all the bots","Backs up your files","Encrypts the network"], a:"Sends commands to all the bots", why:"Command-and-control is how the attacker steers the botnet."},
+      {q:"Besides DDoS, a botnet is commonly used to…", opts:["Send spam and mine cryptocurrency","Speed up your internet","Install antivirus"], a:"Send spam and mine cryptocurrency", why:"Botnets are rented out for spam, mining, click-fraud and more."}
+    ], onDone });
+  }, api.complete);
+}
+function a_theft(root, api){
+  const K="Keylogger", S="Spyware", P="Phishing", B="Backdoor credential theft";
+  choiceQuiz(root,{ options:[K,S,P,B], shuffle:true,
+    hint:"Records keystrokes? Watches activity? Tricks you into typing on a fake page? Steals stored credentials?",
+    items:[
+      {q:"Software records every key you type, capturing your password as you log in.", a:K, why:"Recording keystrokes is a keylogger."},
+      {q:"A fake “bank login” email links to a lookalike page that captures what you type.", a:P, why:"Tricking you into entering data on a fake page is phishing."},
+      {q:"A program silently monitors which sites you visit and reports back.", a:S, why:"Covert monitoring of activity is spyware."},
+      {q:"Malware reads saved passwords from your browser’s store and sends them out.", a:B, why:"Grabbing stored credentials is credential theft."},
+      {q:"You get an urgent SMS with a link asking you to “verify your account now”.", a:P, why:"Urgency plus a fake link is classic phishing (smishing)."}
+    ], onDone:api.complete });
+}
+function a_ransom(root, api){
+  stepper(root, [
+    {cls:"", d:"1 — Delivery", p:"A phishing attachment or drive-by download runs the ransomware."},
+    {cls:"", d:"2 — Encryption", p:"It quietly encrypts your documents, photos and backups with a key only the attacker holds."},
+    {cls:"bad", d:"3 — Ransom note", p:"A screen appears: “Pay in cryptocurrency within 48 hours or lose your files forever.”"},
+    {cls:"", d:"4 — The dilemma", p:"Paying funds criminals and may not restore files. The real protection was <b>offline backups made before the attack</b>."},
+    {cls:"ok", d:"5 — The right defence", p:"With good offline backups, you wipe and restore — no payment needed."}
+  ], ["Walk through all five stages of a ransomware attack"],
+  (root,onDone)=>{ root.querySelector("#tk0").classList.add("ok");
+    const q=el(`<div><div class="part">Quick check</div><div id="rq"></div></div>`); root.appendChild(q);
+    choiceQuiz(root.querySelector("#rq"),{ shuffle:true, items:[
+      {q:"What single measure best protects you from ransomware?", opts:["Regular offline backups","A longer password","Closing the browser"], a:"Regular offline backups", why:"Clean, offline backups let you restore without paying."},
+      {q:"Why is paying the ransom risky even if you can afford it?", opts:["It funds criminals and may not restore your files","It’s always traced instantly","It deletes the malware for free"], a:"It funds criminals and may not restore your files", why:"There’s no guarantee of recovery, and it encourages more attacks."}
+    ], onDone });
+  }, api.complete);
+}
+
+/* Lesson 3 */
+function a_backdoor(root, api){
+  const B="Backdoor / trapdoor", L="Logic bomb";
+  choiceQuiz(root,{ options:[B,L],
+    hint:"A backdoor is a hidden way IN that bypasses login. A logic bomb is harmful code that waits for a condition, then fires.",
+    items:[
+      {q:"A secret account hard-coded into an app lets the author log in anytime, skipping the password check.", a:B, why:"A hidden entry point bypassing authentication is a backdoor."},
+      {q:"A disgruntled programmer hides code that deletes the payroll database if their name disappears from it.", a:L, why:"Code that waits for a condition then does damage is a logic bomb."},
+      {q:"Malware opens a hidden network port so the attacker can return whenever they like.", a:B, why:"A persistent secret way back in is a backdoor."},
+      {q:"Software behaves normally until a specific date, then wipes files.", a:L, why:"A date-triggered destructive action is a logic bomb."},
+      {q:"A hidden key combination unlocks full admin access with no login.", a:B, why:"A secret bypass of normal access control is a backdoor."}
+    ], onDone:api.complete });
+}
+function a_rootkit(root, api){
+  const U="User-mode rootkit", K="Kernel-mode rootkit";
+  choiceQuiz(root,{ options:[U,K],
+    hint:"User-mode hides at the application level and is easier to detect and remove. Kernel-mode lives in the OS core — far stealthier and harder to remove.",
+    items:[
+      {q:"Hides malicious files by tampering with ordinary applications; antivirus can often still catch it.", a:U, why:"Operating at application level makes it a user-mode rootkit."},
+      {q:"Runs inside the operating-system kernel, so it can lie to the OS itself about what’s running.", a:K, why:"Living in the core is a kernel-mode rootkit — the hardest to detect."},
+      {q:"The most dangerous kind, because it can hide from the very tools trying to find it.", a:K, why:"Kernel-mode rootkits can subvert detection tools directly."},
+      {q:"Often removable by standard anti-malware without reinstalling the OS.", a:U, why:"User-mode infections are usually easier to clean."},
+      {q:"May require wiping and reinstalling the operating system to be sure it’s gone.", a:K, why:"Deep kernel infections often need a full rebuild to trust the machine again."}
+    ], onDone:api.complete });
+}
+function a_counter(root, api){
+  sortGame(root,{
+    buckets:[
+      {id:"p", label:"Prevent", sub:"stop it getting in"},
+      {id:"d", label:"Detect", sub:"notice an infection"},
+      {id:"r", label:"Respond / recover", sub:"clean up and restore"}
+    ],
+    tips:{ p:"This stops malware before it runs.", d:"This spots malware that got through.", r:"This removes it or restores systems afterward." },
+    items:[
+      {t:"Patch software promptly", f:"p"}, {t:"User awareness training", f:"p"}, {t:"Block unknown attachments", f:"p"}, {t:"Least-privilege accounts", f:"p"},
+      {t:"Antivirus signature scan", f:"d"}, {t:"Behaviour / anomaly monitoring", f:"d"}, {t:"Intrusion detection alerts", f:"d"},
+      {t:"Quarantine and remove malware", f:"r"}, {t:"Restore from clean backups", f:"r"}, {t:"Rebuild a compromised machine", f:"r"}
+    ]
+  }, api.complete);
+}
+function a_detect(root, api){
+  const S="Signature-based", H="Heuristic", B="Behaviour-based";
+  choiceQuiz(root,{ options:[S,H,B], shuffle:true,
+    hint:"Matching a known fingerprint = signature. Looking for suspicious features in new code = heuristic. Watching what a program does as it runs = behaviour.",
+    items:[
+      {q:"Compares each file against a database of known malware fingerprints.", a:S, why:"Fingerprint matching is signature-based detection."},
+      {q:"Flags a brand-new file because it <i>looks</i> like malware (odd structure, suspicious instructions), even with no known signature.", a:H, why:"Inspecting code for malware-like features is heuristic detection."},
+      {q:"Raises an alarm because a program suddenly starts encrypting hundreds of files.", a:B, why:"Judging by actions at runtime is behaviour-based detection."},
+      {q:"Cannot catch a virus that has never been seen before.", a:S, why:"Signatures only match known malware — the weakness of this method."},
+      {q:"Watches for a program trying to modify system files or contact a C&C server.", a:B, why:"Reacting to suspicious runtime behaviour is behaviour-based."}
+    ], onDone:api.complete });
+}
+function a_response(root, api){
+  orderGame(root, [
+    {t:"<b>Prevention:</b> keep malware out (patching, training, least privilege).", phase:"1", clue:"the first and best line is to stop infection happening."},
+    {t:"<b>Detection:</b> if it gets in, find it quickly.", phase:"2", clue:"once prevention fails, you must first notice the infection."},
+    {t:"<b>Identification:</b> work out exactly what malware it is.", phase:"3", clue:"after detecting something, you must know what you’re dealing with."},
+    {t:"<b>Removal:</b> eradicate it and restore clean systems.", phase:"4", clue:"finally, clean it out and recover."}
+  ], "Correct: prevention → detection → identification → removal. Prevention is best, but a real defence plans for every stage.", api.complete);
+}
+
+/* ---------- modules ---------- */
+const MODULES = [
+{
+  title:"Malware Types and Propagation Vectors", short:"Types & propagation",
+  blurb:"The two-axis model, and the vectors malware uses to spread.",
+  reflectPrompt:"Name one real virus, worm or trojan you’ve heard of (for example WannaCry, ILOVEYOU, or Stuxnet). Which propagation type was it, and how do you think it spread?",
+  takeaways:[
+    "Classify malware on two axes: how it propagates, and what its payload does.",
+    "Vectors: a virus infects a host and needs a user; a worm self-replicates over a network; a trojan disguises itself; a drive-by installs from a visited page.",
+    "A virus moves through dormant, propagation, triggering and execution phases.",
+    "The key difference: viruses need a host and usually a click; worms spread themselves."
+  ],
+  steps:[
+    { title:"Two axes of malware",
+      concept:`<p>Malware comes in endless named varieties, which is overwhelming — until you see that every specimen answers just <b>two questions</b>:</p>
+        <div class="axes"><div class="axis"><b>How does it spread?</b><span>Propagation: virus, worm, trojan, drive-by…</span></div>
+        <div class="axis"><b>What does it do?</b><span>Payload: corrupt, steal, enslave, hide…</span></div></div>
+        <p>These two axes are independent. A worm (how) can carry ransomware (what); a trojan (how) can install a keylogger (what). Learn the axes and every new name slots into place.</p>`,
+      key:"Every piece of malware = <b>a propagation mechanism</b> + <b>a payload</b>.",
+      task:"For each description, decide whether it’s about how the malware spreads or what it does.",
+      hints:["Spreading is about reaching new machines. Payload is the harm once it’s running.","“Copies itself”, “tricks the user”, “exploits the browser” are all spreading."],
+      activity:a_axes },
+    { title:"Propagation vectors",
+      concept:`<p>Four common ways malware reaches a machine. The crucial distinctions are whether it <b>needs a host</b> and whether it <b>needs the user to act</b>.</p>
+        <div class="two"><div class="box"><h4>Virus</h4>Attaches to a host file; spreads when run — usually after a click.</div>
+        <div class="box"><h4>Worm</h4>Standalone; copies itself across the network by itself.</div></div>
+        <div class="two"><div class="box"><h4>Trojan</h4>Disguised as useful; the user installs it. No self-replication.</div>
+        <div class="box"><h4>Drive-by</h4>Installs from a web page you merely visit.</div></div>`,
+      key:"Virus needs a host + click · worm self-spreads · trojan tricks you · drive-by needs only a visit.",
+      task:"Flip all four cards to learn each vector.",
+      hints:["Tap a card to flip it; tap again to flip back.","Watch for which ones need the user to do something."],
+      activity:a_vectors },
+    { title:"The phases of a virus",
+      concept:`<p>A classic virus runs a small life cycle. Not every virus has all four, but understanding the order explains how one behaves.</p>
+        <div class="defn">
+          <div class="d"><b>Dormant</b> — waits, doing nothing.</div>
+          <div class="d"><b>Propagation</b> — copies itself into other programs or files.</div>
+          <div class="d"><b>Triggering</b> — a condition is met (a date, an event, a counter).</div>
+          <div class="d"><b>Execution</b> — the payload runs and does its work.</div>
+        </div>`,
+      key:"Dormant → propagation → triggering → execution.",
+      task:"Put the four phases in the correct order.",
+      hints:["It starts by waiting and ends by acting.","Spreading copies comes before the harmful payload runs."],
+      activity:a_phases },
+    { title:"Virus, worm or trojan?",
+      concept:`<p>Two simple tests separate the big three:</p>
+        <div class="two"><div class="box"><h4>Does it need a host?</h4>Virus: yes. Worm: no. Trojan: it <i>is</i> the (disguised) program.</div>
+        <div class="box"><h4>Does it self-replicate?</h4>Virus: yes, on use. Worm: yes, automatically. Trojan: no.</div></div>`,
+      key:"Host + user-run = virus · self-spreading = worm · disguised, no copying = trojan.",
+      task:"Classify each behaviour as a virus, worm or trojan.",
+      hints:["If a user has to run an infected file, lean virus.","If it spreads with no user action, it’s a worm. If it’s disguised bait, it’s a trojan."],
+      activity:a_props },
+    { title:"Classify real specimens",
+      concept:`<p>Put it together. For real-world specimens, ask: <b>how did it get onto the machine?</b> That answer is its propagation vector.</p>`,
+      key:"Identify the vector by how the malware arrived, not by what harm it caused.",
+      task:"Decide the propagation type of each specimen.",
+      hints:["Attached to a file and spread on use → virus. Spread itself over the network → worm.","Disguised bait the user ran → trojan. Installed from a visited page → drive-by."],
+      activity:a_classify }
+  ]
+},
+{
+  title:"Payloads: What Malware Does", short:"Payloads",
+  blurb:"The four things malware does once it’s in: corrupt, steal, enslave, hide.",
+  reflectPrompt:"Think of a real incident where malware stole data or demanded ransom (for example a bank, a hospital, or a company you’ve read about). What was the payload trying to achieve?",
+  takeaways:[
+    "Payloads fall into four groups: corrupt/destroy, steal information, steal service (zombie), and hide/persist.",
+    "Infected machines become bots; many bots form a botnet under command-and-control, used for DDoS, spam and mining.",
+    "Information theft includes keyloggers, spyware, phishing and stealing stored credentials.",
+    "Against ransomware, clean offline backups are the strongest protection."
+  ],
+  steps:[
+    { title:"What payloads do",
+      concept:`<p>The payload is the <b>point</b> of the malware — the harm it was written to cause. Nearly all payloads fall into four families:</p>
+        <div class="defn">
+          <div class="d"><b>Corrupt</b> — destroy or alter data and systems.</div>
+          <div class="d"><b>Steal information</b> — passwords, cards, keystrokes.</div>
+          <div class="d"><b>Steal service</b> — make your machine a bot for the attacker.</div>
+          <div class="d"><b>Hide and persist</b> — backdoors and rootkits (Lesson 3).</div>
+        </div>`,
+      key:"Corrupt · steal data · steal service · hide. One specimen may do several.",
+      task:"Flip all four cards to learn the payload families.",
+      hints:["Tap a card to flip it.","Notice that a single attack can combine families."],
+      activity:a_payCats },
+    { title:"Sort the damage",
+      concept:`<p>Naming the payload family tells you what was harmed, and points to the defence. Sort real effects into the right group.</p>`,
+      key:"Destroyed = corrupt · taken secret data = steal info · used your machine = steal service.",
+      task:"Sort each effect into corrupt, steal information or steal service.",
+      hints:["Encrypting or deleting data is corruption.","Grabbing passwords is theft; mining or DDoS from your PC is stolen service."],
+      activity:a_paySort },
+    { title:"Bots and botnets",
+      concept:`<p>One of the most profitable payloads turns your machine into a <b>bot</b> (zombie): quietly obedient to a remote attacker. Thousands of bots form a <b>botnet</b>, steered through a <b>command-and-control (C&C)</b> channel.</p>
+        <p>Botnets power DDoS attacks, spam campaigns, cryptomining and credential stuffing — often rented out to other criminals.</p>`,
+      key:"Bot = enslaved machine. Botnet = an army of them under C&C.",
+      task:"Step through a botnet attack, then answer three checks.",
+      hints:["Press “Next step” to advance one stage at a time.","Watch where the orders come from."],
+      activity:a_botnet },
+    { title:"Information theft",
+      concept:`<p>A huge share of malware exists simply to <b>steal secrets</b>. The main techniques:</p>
+        <div class="defn">
+          <div class="d"><b>Keylogger</b> — records keystrokes, catching passwords as you type.</div>
+          <div class="d"><b>Spyware</b> — silently monitors your activity and reports back.</div>
+          <div class="d"><b>Phishing</b> — tricks you into typing secrets on a fake page.</div>
+          <div class="d"><b>Credential theft</b> — grabs saved passwords and tokens.</div>
+        </div>`,
+      key:"Different tricks, one goal: get your secrets to the attacker.",
+      task:"Match each example to the information-theft technique.",
+      hints:["Recording keys vs watching activity vs faking a page vs stealing stored logins.","Urgency plus a fake link is phishing."],
+      activity:a_theft },
+    { title:"Ransomware up close",
+      concept:`<p><b>Ransomware</b> combines two payload families: it <b>corrupts</b> your access to data by encrypting it, then <b>extorts</b> you for the key. It has become one of the costliest threats to businesses and hospitals.</p>
+        <p>The uncomfortable truth: once files are encrypted, options are poor. The real defence happens <b>before</b> the attack — with backups.</p>`,
+      key:"Prevention and offline backups beat any decision made after encryption.",
+      task:"Walk through a ransomware attack, then answer two checks.",
+      hints:["Advance step by step.","Think about what would let you recover without paying."],
+      activity:a_ransom }
+  ]
+},
+{
+  title:"Stealthing, Backdoors, Rootkits and Defence", short:"Stealth & defence",
+  blurb:"How malware hides and persists, and how layered defence fights back.",
+  reflectPrompt:"Where on your own phone or laptop could a backdoor or rootkit hide, and which one defence (patching, backups, awareness, least privilege…) will you actually apply today?",
+  takeaways:[
+    "Backdoors give secret entry that bypasses authentication; logic bombs fire on a condition.",
+    "Rootkits hide malware; kernel-mode rootkits are far stealthier and may need a full rebuild.",
+    "Countermeasures layer into prevent, detect and respond/recover.",
+    "Detection methods: signature, heuristic and behaviour-based — the real response runs prevention → detection → identification → removal."
+  ],
+  steps:[
+    { title:"Backdoors and logic bombs",
+      concept:`<p>Some malware is about <b>staying in</b> and <b>striking later</b>:</p>
+        <div class="two"><div class="box"><h4>Backdoor (trapdoor)</h4>A secret way in that bypasses normal login, so the attacker can return anytime.</div>
+        <div class="box"><h4>Logic bomb</h4>Harmful code that lies dormant until a condition (a date, an event) triggers it.</div></div>`,
+      key:"Backdoor = hidden entry. Logic bomb = delayed, condition-triggered harm.",
+      task:"Decide whether each case is a backdoor or a logic bomb.",
+      hints:["A hidden way IN that skips the password is a backdoor.","Code that waits for a condition then damages is a logic bomb."],
+      activity:a_backdoor },
+    { title:"Rootkits",
+      concept:`<p>A <b>rootkit</b> hides the attacker’s presence — concealing files, processes and network connections from the user and from security tools. The deeper it runs, the harder it is to find.</p>
+        <div class="two"><div class="box"><h4>User-mode</h4>Hides at the application level. Often detectable and removable.</div>
+        <div class="box"><h4>Kernel-mode</h4>Runs in the OS core; can lie to the OS itself. The stealthiest, often needing a full rebuild.</div></div>`,
+      key:"Deeper = stealthier. Kernel-mode rootkits are the hardest to detect and remove.",
+      task:"Classify each statement as a user-mode or kernel-mode rootkit.",
+      hints:["Application level, easier to clean → user-mode.","Lives in the kernel, can hide from detectors → kernel-mode."],
+      activity:a_rootkit },
+    { title:"Countermeasures: three layers",
+      concept:`<p>No single control stops all malware. Strong defence layers three kinds of control so that if one fails, another catches the threat.</p>
+        <div class="defn">
+          <div class="d"><b>Prevent</b> — patching, training, least privilege, blocking risky content.</div>
+          <div class="d"><b>Detect</b> — antivirus, behaviour monitoring, intrusion detection.</div>
+          <div class="d"><b>Respond / recover</b> — quarantine, removal, restore from backups, rebuild.</div>
+        </div>`,
+      key:"Prevent, detect, respond — layers that back each other up.",
+      task:"Sort each measure into prevent, detect or respond/recover.",
+      hints:["If it stops infection, it’s prevent.","If it spots infection, detect. If it cleans up afterward, respond/recover."],
+      activity:a_counter },
+    { title:"How detection works",
+      concept:`<p>Detecting malware uses three complementary methods:</p>
+        <div class="defn">
+          <div class="d"><b>Signature-based</b> — match files against known malware fingerprints. Fast, but blind to brand-new malware.</div>
+          <div class="d"><b>Heuristic</b> — judge whether unknown code <i>looks</i> malicious by its features.</div>
+          <div class="d"><b>Behaviour-based</b> — watch what a running program <i>does</i> and react to suspicious actions.</div>
+        </div>`,
+      key:"Signature catches the known; heuristics and behaviour catch the new.",
+      task:"Match each description to its detection method.",
+      hints:["Fingerprint match → signature. Looks suspicious → heuristic.","Acts suspicious while running → behaviour-based."],
+      activity:a_detect },
+    { title:"The response pipeline",
+      concept:`<p>Prevention is best, but a complete plan assumes some malware will get through. The classic response runs in order, each stage catching what the last missed.</p>`,
+      key:"Prevention → detection → identification → removal.",
+      task:"Put the four stages of malware response in order.",
+      hints:["Keeping it out comes first.","Once in, you must notice it, name it, then remove it."],
+      activity:a_response }
+  ]
+}
+];
+
+/* ---------- quiz ---------- */
+const QUIZ = [
+  {topic:"Lesson 1", q:"Malware is best classified on which two axes?", o:["How it propagates and what its payload does","Its file size and its colour","Its price and its age","The browser and the keyboard"], a:0, ex:"Every specimen = a propagation mechanism + a payload."},
+  {topic:"Lesson 1", q:"Which malware needs a host program and usually a user to run it?", o:["A worm","A virus","A botnet","A firewall"], a:1, ex:"A virus attaches to a host and spreads when the infected file is run."},
+  {topic:"Lesson 1", q:"A program that copies itself across a network with no user action is a…", o:["Trojan","Logic bomb","Worm","Rootkit"], a:2, ex:"Autonomous self-propagation is the defining trait of a worm."},
+  {topic:"Lesson 1", q:"Software disguised as useful that the user installs, and that does not replicate, is a…", o:["Trojan","Virus","Worm","Drive-by download"], a:0, ex:"A trojan relies on disguise and does not self-replicate."},
+  {topic:"Lesson 1", q:"The phases of a classic virus, in order, are…", o:["Execution, dormant, triggering, propagation","Dormant, propagation, triggering, execution","Triggering, execution, dormant, propagation","Propagation, execution, dormant, triggering"], a:1, ex:"Dormant → propagation → triggering → execution."},
+  {topic:"Lesson 2", q:"Turning a victim’s machine into a remotely controlled bot is which payload type?", o:["Corruption of data","Theft of service","Hiding and persistence","Input validation"], a:1, ex:"Enslaving the machine for the attacker’s use is theft of service."},
+  {topic:"Lesson 2", q:"Many bots controlled through a C&C channel form a…", o:["Botnet","Backup","Firewall","Sandbox"], a:0, ex:"A botnet is a network of compromised machines under command-and-control."},
+  {topic:"Lesson 2", q:"Software that records your keystrokes to steal passwords is a…", o:["Keylogger","Worm","Logic bomb","Rootkit"], a:0, ex:"Keyloggers capture keystrokes, including passwords."},
+  {topic:"Lesson 2", q:"Ransomware’s payload mainly…", o:["Speeds up the computer","Encrypts files and demands payment for the key","Installs antivirus","Backs up your data"], a:1, ex:"It encrypts data and extorts a ransom for the decryption key."},
+  {topic:"Lesson 2", q:"The strongest protection against ransomware is…", o:["Paying quickly","Regular offline backups","A brighter screen","Deleting your email"], a:1, ex:"Clean offline backups let you restore without paying."},
+  {topic:"Lesson 3", q:"A secret entry point that bypasses normal authentication is a…", o:["Backdoor","Firewall","Signature","Patch"], a:0, ex:"A backdoor (trapdoor) lets an attacker in while skipping login."},
+  {topic:"Lesson 3", q:"Which rootkit is the stealthiest and hardest to remove?", o:["User-mode","Kernel-mode","Document macro","Phishing page"], a:1, ex:"Kernel-mode rootkits run in the OS core and can hide from detectors."},
+  {topic:"Lesson 3", q:"Antivirus that matches files against known malware fingerprints uses…", o:["Behaviour-based detection","Heuristic detection","Signature-based detection","A logic bomb"], a:2, ex:"Fingerprint matching is signature-based, and can’t catch brand-new malware."},
+  {topic:"Lesson 3", q:"Raising an alarm because a program suddenly encrypts hundreds of files is…", o:["Signature-based detection","Behaviour-based detection","A backdoor","Propagation"], a:1, ex:"Reacting to suspicious runtime actions is behaviour-based detection."},
+  {topic:"Lesson 3", q:"The classic malware response runs in which order?", o:["Removal, detection, prevention, identification","Prevention, detection, identification, removal","Detection, removal, prevention, identification","Identification, prevention, removal, detection"], a:1, ex:"Prevent first; then detect, identify and remove what gets through."}
+];
+function gradeOf(sc){ if(sc>=13) return {g:"A",t:"Excellent"}; if(sc>=11) return {g:"B",t:"Very good"}; if(sc>=9) return {g:"C",t:"Pass"}; return {g:"–",t:"Needs revision"}; }
+
+/* ---------- shared: build + share outcome text ---------- */
+function lessonOutcomeText(m){
+  const mod = MODULES[m], cnt=[0,1,2,3,4].filter(i=>S.done[m*5+i]).length;
+  const ref = (S.reflect[m]||"").trim();
+  let t = `Malicious Software — Lesson ${m+1} outcomes\n`;
+  t += `${mod.title}\n`;
+  t += `Student: ${S.name} (Roll no. ${S.roll})\n`;
+  t += `Activities completed: ${cnt} of 5\n\n`;
+  t += `What I learned:\n` + mod.takeaways.map(x=>"• "+x.replace(/<[^>]+>/g,"")).join("\n") + "\n\n";
+  t += `My real-world reflection:\n` + (ref ? ref : "(not written)") + "\n";
+  return t;
+}
+function shareOutcome(m, statusEl){
+  const text = lessonOutcomeText(m);
+  const title = `Malicious Software — Lesson ${m+1} outcomes`;
+  const showBox = () => {
+    let box = statusEl.parentNode.querySelector(".sharebox");
+    if(!box){ box = el(`<textarea class="sharebox" readonly></textarea>`); statusEl.parentNode.appendChild(box); }
+    box.value = text; box.focus(); box.select();
+    statusEl.textContent = "Copied to clipboard. You can also select the text below to copy or paste it anywhere.";
+  };
+  try{
+    if(navigator.share){
+      navigator.share({title, text}).then(()=>{ statusEl.textContent = "Shared."; }).catch(()=>{ copyThenBox(); });
+      return;
+    }
+  }catch(e){}
+  copyThenBox();
+  function copyThenBox(){
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(showBox).catch(showBox); }
+      else showBox();
+    }catch(e){ showBox(); }
+  }
+}
+
+/* ---------- top bar & nav ---------- */
+function renderTop(){
+  if(mode === "welcome" || !S.name){ topbar.innerHTML = `<div class="topbar-in"><div class="brand"><span class="brand-ic">◆</span><span class="brand-t">Activity Lab<small>Malicious Software</small></span></div></div>`; return; }
+  const n=doneCount(), inQuiz = mode==="quiz";
+  const initials = S.name.trim().split(/\s+/).map(w=>w[0]).slice(0,2).join("").toUpperCase();
+  topbar.innerHTML = `<div class="topbar-in">
+    <button class="brand" id="tbHome" ${inQuiz?"disabled":""} aria-label="Learning map"><span class="brand-ic">◆</span><span class="brand-t">Activity Lab<small>Malicious Software</small></span></button>
+    <div class="tb-right">
+      <span class="tb-steps"><b>${n}</b>/${TOTAL} done</span>
+      <div class="student"><b>${esc(S.name.split(" ")[0])}</b><small>${esc(S.roll)}</small></div>
+      ${inQuiz ? `<span class="pill on">Quiz</span>` : `<button class="btn btn-quiet btn-sm" id="tbMap">Map</button>`}
+    </div></div>`;
+  const home=document.getElementById("tbHome"), map=document.getElementById("tbMap");
+  if(home && !inQuiz) home.addEventListener("click",()=>go(screenOverview));
+  if(map) map.addEventListener("click",()=>go(screenOverview));
+}
+function go(fn, ...args){ fn(...args); renderTop(); try{ window.scrollTo(0,0); }catch(e){} }
+
+/* ---------- screens ---------- */
+function screenWelcome(){
+  mode="welcome"; const has=!!S.name;
+  app.innerHTML = `<section class="screen stack">
+    <div class="bare">
+      <div class="eyebrow">Interactive activity · beginner</div>
+      <h1>Malicious Software</h1>
+      <p class="lead">A structured way to understand malware: classify it by how it propagates and what it does. Those two axes explain every specimen you will meet.</p>
+      <ul class="facts"><li>3 lessons, 15 short hands-on activities</li><li>Free hints at every step</li><li>A real-world reflection and shareable outcomes after each lesson</li><li>Final quiz worth 15 marks</li></ul>
+    </div>
+    <div class="card" id="who"></div>
+  </section>`;
+  const who=document.getElementById("who");
+  if(has){
+    who.innerHTML = `<h3>Welcome back, ${esc(S.name.split(" ")[0])}</h3>
+      <p class="muted">Roll no. ${esc(S.roll)} · ${doneCount()} of ${TOTAL} activities done${S.results.length?` · quiz taken ${S.results.length}×`:""}.</p>
+      <div class="row wrap"><button class="btn" id="cont">Continue</button><button class="btn btn-quiet" id="newst">Different student</button></div>`;
+    document.getElementById("cont").addEventListener("click",()=>go(screenOverview));
+    document.getElementById("newst").addEventListener("click",()=>{ S=fresh(); save(); go(screenWelcome); });
+  } else {
+    who.innerHTML = `<h3>Before you begin</h3><p class="muted small">Your name and roll number appear on your lesson outcomes and final result.</p>
+      <div class="who-grid">
+        <div class="field"><label for="nm">Full name</label><input class="input" id="nm" maxlength="60" autocomplete="name" placeholder="e.g. Hiba Imran"></div>
+        <div class="field"><label for="rl">Roll number</label><input class="input" id="rl" maxlength="30" autocomplete="off" placeholder="e.g. 23CS045"></div>
+      </div>
+      <div class="err" id="err" aria-live="polite"></div>
+      <button class="btn" id="startBtn" style="margin-top:4px">Start</button>`;
+    const nm=document.getElementById("nm"), rl=document.getElementById("rl"), err=document.getElementById("err");
+    function start(){ const n=nm.value.trim().replace(/\s+/g," "), r=rl.value.trim();
+      if(n.length<2){ err.textContent="Enter your full name."; nm.focus(); return; }
+      if(r.length<2){ err.textContent="Enter your roll number."; rl.focus(); return; }
+      if(!/^[A-Za-z0-9\-\/_. ]+$/.test(r)){ err.textContent="Roll numbers use letters, numbers, dashes, slashes and dots only."; rl.focus(); return; }
+      S=fresh(); S.name=n; S.roll=r; save(); go(screenOverview);
+    }
+    document.getElementById("startBtn").addEventListener("click",start);
+    [nm,rl].forEach(x=>x.addEventListener("keydown",e=>{ if(e.key==="Enter") start(); }));
+    nm.focus();
+  }
+}
+
+function modInfo(m){
+  const cnt=[0,1,2,3,4].filter(i=>S.done[m*5+i]).length;
+  const unlocked = m===0 || S.maxPos >= m*5-1;
+  const started = S.maxPos >= m*5;
+  let target=m*5; for(let i=0;i<5;i++){ if(!S.done[m*5+i]){ target=m*5+i; break; } }
+  if(target > S.maxPos+1) target = Math.max(m*5, Math.min(S.maxPos, m*5+4));
+  return {cnt, unlocked, started, target};
+}
+
+function screenOverview(){
+  mode="map";
+  const quizOpen = S.maxPos>=14, res=S.results, best = res.length?Math.max(...res.map(r=>r.score)):null;
+  app.innerHTML = `<section class="screen stack">
+    <div class="bare">
+      <div class="eyebrow">Overview</div>
+      <h2>What this is about</h2>
+      <p>“Malware” is a huge, scary-sounding word covering thousands of named threats. This lab gives you a simple mental filing system: sort any malware by <b>how it spreads</b> and <b>what it does</b>. With those two axes, every virus, worm, trojan, botnet and rootkit falls neatly into place.</p>
+      <p class="muted small">Everything here is simulated for learning — nothing runs real malware.</p>
+    </div>
+    <div class="card">
+      <h3>By the end, you can…</h3>
+      <ul class="obj">
+        <li>Classify malware by propagation and by payload.</li>
+        <li>Tell a virus, worm, trojan and drive-by apart.</li>
+        <li>Describe the four payload families, and how botnets and ransomware work.</li>
+        <li>Recognise keyloggers, spyware and phishing.</li>
+        <li>Explain backdoors, logic bombs and rootkits.</li>
+        <li>Lay out defence as prevent, detect and respond, with the three detection methods.</li>
+      </ul>
+    </div>
+    <div class="bare"><h3>Lessons</h3><div class="path" id="path"></div></div>
+    <div class="card">
+      <h3>Marking</h3>
+      <table class="marks"><thead><tr><th>Part</th><th>Detail</th><th>Marks</th></tr></thead><tbody>
+        <tr><td>Activities</td><td>15 hands-on activities</td><td>Shown on your card</td></tr>
+        <tr><td>Reflections</td><td>One short real-world note per lesson</td><td>Shareable</td></tr>
+        <tr><td>Final quiz</td><td>15 questions, 1 mark each</td><td>15 marks</td></tr>
+        <tr><td>Pass</td><td>9 / 15 · A 13–15 · B 11–12 · C 9–10</td><td>—</td></tr>
+      </tbody></table>
+      <p class="small muted" style="margin-top:8px">The quiz unlocks at the end of Lesson 3. Questions are shuffled, there are no hints, and answers lock on submit.</p>
+    </div>
+  </section>`;
+  const path=document.getElementById("path");
+  MODULES.forEach((mod,m)=>{
+    const info=modInfo(m);
+    const label = !info.unlocked?"Locked":info.cnt===5?"Review":info.started?"Continue":"Start";
+    const c=el(`<div class="pcard ${info.unlocked?"":"locked"}"><div class="pnum">${m+1}</div>
+      <div><div class="ptitle">${mod.title}</div><div class="pmeta">${mod.blurb} · ${info.cnt}/5 done</div></div>
+      <button class="btn ${info.cnt===5?"btn-ghost":""} btn-sm" ${info.unlocked?"":"disabled"}>${label}</button></div>`);
+    c.querySelector("button").addEventListener("click",()=>go(screenStep, info.target));
+    path.appendChild(c);
+  });
+  const q=el(`<div class="pcard quiz ${quizOpen?"":"locked"}"><div class="pnum">★</div>
+    <div><div class="ptitle">Final quiz</div><div class="pmeta">15 questions · 1 mark each${res.length?` · best ${best}/15`:""}</div></div>
+    <button class="btn btn-sm" ${quizOpen?"":"disabled"}>${quizOpen?(res.length?"Retake":"Start"):"Locked"}</button></div>`);
+  q.querySelector("button").addEventListener("click",()=>go(screenQuizIntro));
+  path.appendChild(q);
+}
+
+function screenStep(pos){
+  mode="step";
+  const m=Math.floor(pos/5), s=pos%5, mod=MODULES[m], st=mod.steps[s];
+  if(pos>S.maxPos){ S.maxPos=pos; save(); }
+  const done=!!S.done[pos];
+  const nextLabel = d => d ? (s<4?"Continue":"Finish lesson") : "Skip";
+  app.innerHTML = `<section class="screen stack">
+    <div class="bare">
+      <div class="crumbs"><span class="pill">Lesson ${m+1}</span><span>${mod.short}</span><span>·</span><span>Step ${s+1} of 5</span></div>
+      <div class="steptitle"><h2>${st.title}</h2></div>
+      <div class="rail" style="margin-top:10px"><i style="width:${(s+1)/5*100}%"></i></div>
+    </div>
+    <div class="bare">${st.concept}<div class="key">🔑 <b>Key idea:</b> ${st.key}</div></div>
+    <div class="actwrap ${done?"done":""}" id="act">
+      <div class="act-top"><span class="act-label">Activity</span><span class="badge">✓ Completed</span></div>
+      <p class="task">${st.task}</p>
+      <div id="body"></div>
+      <div class="hintarea"><button class="btn btn-quiet btn-sm" id="hintBtn">💡 Hint</button><div id="hints"></div></div>
+    </div>
+    <div class="stepnav">
+      <button class="btn btn-quiet btn-sm" id="back">◂ Back</button>
+      <div class="dots" id="dots" aria-hidden="true"></div>
+      <button class="btn btn-sm ${done?"":"btn-ghost"}" id="next">${nextLabel(done)} ▸</button>
+    </div>
+  </section>`;
+  const act=document.getElementById("act"), nextBtn=document.getElementById("next");
+  function dots(){ document.getElementById("dots").innerHTML=[0,1,2,3,4].map(i=>`<i class="${i===s?"on":""} ${S.done[m*5+i]?"ok":""}"></i>`).join(""); }
+  dots();
+  const api={ complete(){ if(!S.done[pos]){ S.done[pos]=true; save(); } act.classList.add("done"); nextBtn.classList.remove("btn-ghost"); nextBtn.textContent=nextLabel(true)+" ▸"; dots(); renderTop(); } };
+  let hi=0; const hb=document.getElementById("hintBtn"), hbox=document.getElementById("hints");
+  hb.addEventListener("click",()=>{ if(hi>=st.hints.length) return; hbox.appendChild(el(`<div class="hintbox"><b>Hint ${hi+1}/${st.hints.length}:</b> ${st.hints[hi]}</div>`)); hi++; if(hi>=st.hints.length){ hb.disabled=true; hb.textContent="No more hints"; } });
+  try{ st.activity(document.getElementById("body"), api); }catch(e){ console.error(e); }
+  document.getElementById("back").addEventListener("click",()=>go(s>0?()=>screenStep(pos-1):screenOverview));
+  nextBtn.addEventListener("click",()=>go(s<4?()=>screenStep(pos+1):()=>screenModuleDone(m)));
+}
+
+function screenModuleDone(m){
+  mode="done";
+  const mod=MODULES[m], cnt=[0,1,2,3,4].filter(i=>S.done[m*5+i]).length;
+  app.innerHTML = `<section class="screen stack">
+    <div class="bare done-head">
+      <div class="check">✓</div>
+      <h2>Lesson ${m+1} complete</h2>
+      <p class="muted">${mod.title} · ${cnt} of 5 activities</p>
+    </div>
+    <div class="card">
+      <h3>What you learned</h3>
+      <ul class="take">${mod.takeaways.map(t=>`<li>${t}</li>`).join("")}</ul>
+    </div>
+    <div class="card">
+      <h3>Reflect on the real world</h3>
+      <div class="reflect">
+        <div class="prompt">${mod.reflectPrompt}</div>
+        <textarea class="ta" id="refl" placeholder="Write a sentence or two…">${esc(S.reflect[m]||"")}</textarea>
+        <p class="small muted" id="refstatus" style="margin:6px 0 0">${(S.reflect[m]||"").trim()?"Saved.":"Your note is saved automatically and added to your shared outcomes."}</p>
+      </div>
+      <div class="share-out">
+        <h4 style="margin:16px 0 6px">Share your outcomes</h4>
+        <p class="small muted">Create a short summary of this lesson — your activities and reflection — to share with your teacher or group.</p>
+        <div class="row wrap" style="margin-top:8px"><button class="btn btn-sm" id="shareBtn">Share outcomes</button><button class="btn btn-quiet btn-sm" id="previewBtn">Preview</button></div>
+        <p class="small muted" id="shareStatus" aria-live="polite" style="margin-top:8px"></p>
+      </div>
+    </div>
+    <div class="row wrap center">
+      <button class="btn btn-quiet btn-sm" id="toMap">Map</button>
+      <button class="btn btn-sm" id="nextMod">${m<2?`Start Lesson ${m+2}`:"Final quiz"} ▸</button>
+    </div>
+  </section>`;
+  const refl=document.getElementById("refl"), refstatus=document.getElementById("refstatus");
+  refl.addEventListener("input",()=>{ S.reflect[m]=refl.value; save(); refstatus.textContent = refl.value.trim()?"Saved.":"Your note is saved automatically and added to your shared outcomes."; });
+  const status=document.getElementById("shareStatus");
+  document.getElementById("shareBtn").addEventListener("click",()=>{ S.reflect[m]=refl.value; save(); shareOutcome(m, status); });
+  document.getElementById("previewBtn").addEventListener("click",()=>{ S.reflect[m]=refl.value; save();
+    let box=status.parentNode.querySelector(".sharebox"); if(!box){ box=el(`<textarea class="sharebox" readonly></textarea>`); status.parentNode.appendChild(box); }
+    box.value=lessonOutcomeText(m); status.textContent="Preview of what will be shared:"; });
+  document.getElementById("toMap").addEventListener("click",()=>go(screenOverview));
+  document.getElementById("nextMod").addEventListener("click",()=>go(m<2?()=>screenStep((m+1)*5):screenQuizIntro));
+}
+
+let Q=null;
+function screenQuizIntro(){
+  mode="map"; const n=doneCount();
+  app.innerHTML = `<section class="screen card">
+    <div class="eyebrow">Final quiz</div>
+    <h2>Ready, ${esc(S.name.split(" ")[0])}?</h2>
+    <table class="marks" style="margin:12px 0"><tbody>
+      <tr><th>Questions</th><td>15, from all three lessons</td></tr>
+      <tr><th>Marks</th><td>1 each — 15 total</td></tr>
+      <tr><th>Pass</th><td>9 / 15</td></tr>
+      <tr><th>Rules</th><td>No hints · shuffled · answers lock on submit</td></tr>
+      <tr><th>Attempt</th><td>#${S.results.length+1}${S.results.length?` · first was ${S.results[0].score}/15`:""}</td></tr>
+    </tbody></table>
+    ${n<TOTAL?`<div class="fb">You’ve done ${n}/${TOTAL} activities. Finishing them first will help.</div>`:`<div class="fb good">All 15 activities done — well prepared.</div>`}
+    <div class="row wrap" style="margin-top:14px"><button class="btn btn-quiet btn-sm" id="qback">Map</button><button class="btn btn-sm" id="qgo">Start ▸</button></div>
+  </section>`;
+  document.getElementById("qback").addEventListener("click",()=>go(screenOverview));
+  document.getElementById("qgo").addEventListener("click",()=>{ Q={ qs:shuffle(QUIZ).map(q=>Object.assign({},q,{order:shuffle([0,1,2,3])})), i:0, score:0, answers:[], start:Date.now() }; go(screenQuestion); });
+}
+
+function screenQuestion(){
+  mode="quiz"; const q=Q.qs[Q.i]; let sel=null, locked=false;
+  app.innerHTML = `<section class="screen card">
+    <div class="row between"><span class="pill">Q${Q.i+1} / ${Q.qs.length}</span><span class="pill">Score ${Q.score}</span></div>
+    <div class="rail" style="margin-top:10px"><i style="width:${Q.i/Q.qs.length*100}%"></i></div>
+    <p class="small muted" style="margin:12px 0 0">${q.topic}</p>
+    <h3 class="qprompt">${q.q}</h3>
+    <div class="qopts">${q.order.map((oi,k)=>`<button class="qopt" data-oi="${oi}"><span class="ltr">${"ABCD"[k]}</span><span>${q.o[oi]}</span></button>`).join("")}</div>
+    <div id="qfb" aria-live="polite"></div>
+    <div class="row end" style="margin-top:14px"><button class="btn btn-sm" id="qsub" disabled>Submit</button></div>
+  </section>`;
+  const sub=document.getElementById("qsub"), btns=app.querySelectorAll(".qopt");
+  btns.forEach(b=>b.addEventListener("click",()=>{ if(locked) return; btns.forEach(x=>x.classList.remove("sel")); b.classList.add("sel"); sel=+b.dataset.oi; sub.disabled=false; }));
+  sub.addEventListener("click",()=>{
+    if(!locked){ if(sel===null) return; locked=true; const ok=sel===q.a; if(ok) Q.score++;
+      Q.answers.push({q:q.q, chosen:q.o[sel], correct:q.o[q.a], ok, ex:q.ex});
+      btns.forEach(x=>{ x.disabled=true; const oi=+x.dataset.oi; if(oi===q.a) x.classList.add("right"); else if(oi===sel) x.classList.add("wrong"); x.classList.remove("sel"); });
+      document.getElementById("qfb").innerHTML=`<div class="fb ${ok?"good":"bad"}"><b>${ok?"Correct. +1":"Not quite."}</b> ${q.ex}</div>`;
+      sub.textContent = Q.i+1<Q.qs.length?"Next ▸":"See result";
+    } else if(Q.i+1<Q.qs.length){ Q.i++; go(screenQuestion); } else finishQuiz();
+  });
+}
+function finishQuiz(){
+  const r={ score:Q.score, total:15, pct:Math.round(Q.score/15*100), ms:Date.now()-Q.start, date:new Date().toISOString(), attempt:S.results.length+1, activities:doneCount() };
+  S.results.push(r); save(); go(screenResult, r, Q.answers);
+}
+function screenResult(r, answers){
+  mode="result"; const g=gradeOf(r.score), pass=r.score>=9;
+  const mins=Math.floor(r.ms/60000), secs=Math.round((r.ms%60000)/1000), when=new Date(r.date).toLocaleString();
+  const text = `Malicious Software — Activity Result
+Name: ${S.name}
+Roll no.: ${S.roll}
+Quiz: ${r.score}/15 (${r.pct}%) — Grade ${g.g} (${g.t}) — ${pass?"PASS":"Needs revision"}
+Activities: ${r.activities}/15
+Attempt: ${r.attempt} · ${mins}m ${secs}s · ${when}`;
+  app.innerHTML = `<section class="screen stack">
+    <div class="card">
+      <div class="row between"><span class="eyebrow" style="margin:0">Result</span><span class="pill">Attempt ${r.attempt}</span></div>
+      <h2 style="margin:8px 0 14px">Malicious Software result</h2>
+      <div class="ring" style="--p:${r.pct}"><div><div><b>${r.score}</b><span>of 15</span></div></div></div>
+      <div class="kv">
+        <div><small>Student</small><b>${esc(S.name)}</b></div>
+        <div><small>Roll no.</small><b>${esc(S.roll)}</b></div>
+        <div><small>Grade</small><b>${g.g} — ${g.t}</b></div>
+        <div><small>Status</small><b class="${pass?"status-pass":"status-fail"}">${pass?"Pass":"Needs revision"}</b></div>
+        <div><small>Activities</small><b>${r.activities} / 15</b></div>
+        <div><small>Time</small><b>${mins}m ${secs}s</b></div>
+      </div>
+      <p class="small muted" style="margin-top:12px">Screenshot this card or copy the text for your teacher.</p>
+      <div class="row wrap"><button class="btn btn-sm" id="copy">Copy result</button><button class="btn btn-quiet btn-sm" id="retake">Retake</button><button class="btn btn-quiet btn-sm" id="rmap">Map</button></div>
+      <div id="ca"></div>
+    </div>
+    <div class="card"><h3>Review</h3><ul class="review">${answers.map(a=>`<li><b>${a.q}</b><br><span class="${a.ok?"yes":"no"}">${a.ok?"✓":"✗"} Your answer: ${a.chosen}</span>${a.ok?"":`<br><span class="yes">✓ Correct: ${a.correct}</span>`}<div class="small muted" style="margin-top:3px">${a.ex}</div></li>`).join("")}</ul></div>
+  </section>`;
+  const copyBtn=document.getElementById("copy");
+  copyBtn.addEventListener("click",()=>{
+    const fb=()=>{ const ca=document.getElementById("ca"); ca.innerHTML=`<textarea class="sharebox" readonly></textarea>`; const ta=ca.querySelector("textarea"); ta.value=text; ta.focus(); ta.select(); };
+    try{ if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(()=>{ copyBtn.textContent="Copied"; setTimeout(()=>copyBtn.textContent="Copy result",2000); }).catch(fb); else fb(); }catch(e){ fb(); }
+  });
+  document.getElementById("retake").addEventListener("click",()=>go(screenQuizIntro));
+  document.getElementById("rmap").addEventListener("click",()=>go(screenOverview));
+}
+
+load();
+go(screenWelcome);
+})();
+</script>
+</body>
+</html>
